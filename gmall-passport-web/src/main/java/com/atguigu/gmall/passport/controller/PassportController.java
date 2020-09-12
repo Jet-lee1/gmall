@@ -4,11 +4,13 @@ import com.alibaba.dubbo.config.annotation.Reference;
 import com.atguigu.gmall.bean.UmsMember;
 import com.atguigu.gmall.service.UserService;
 import com.atguigu.gmall.util.JwtUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +21,7 @@ import java.util.Map;
  *@Date 2020/8/27{TIME}
  **/
 @Controller
-public class PassportController {
+public class  PassportController {
 
     @Reference
     UserService userService;
@@ -35,7 +37,7 @@ public class PassportController {
 
     @RequestMapping("login")
     @ResponseBody
-    public String login(UmsMember umsMember){
+    public String login(UmsMember umsMember, HttpServletRequest request){
 
         String token = "";
 
@@ -43,12 +45,35 @@ public class PassportController {
         UmsMember umsMemberLogin = userService.login(umsMember);
 
         if(umsMemberLogin!=null){
+            // 登录成功
+
+            // 用jwt制作token
+            String memberId = umsMemberLogin.getId();
+            String nickname = umsMemberLogin.getNickname();
+            Map<String,Object> userMap = new HashMap<>();
+            userMap.put("memberId",memberId);
+            userMap.put("nickname",nickname);
+
+            String ip = request.getHeader("x-forwarded-for");// 通过nginx转发的客户端ip
+            if(StringUtils.isBlank(ip)){
+                ip = request.getRemoteAddr();// 从request中获取ip
+                if(StringUtils.isBlank(ip)){
+                    ip = "127.0.0.1";
+                }
+            }
+
+            // 按照设计的算法对参数进行加密后，生成token
+            token = JwtUtil.encode("2019gmall0105", userMap, ip);
+
+            // 将token存入redis一份
+            userService.addUserToken(token,memberId);
 
         }else{
             // 登录失败
+            token = "fail";
         }
 
-        return "token";
+        return token;
     }
 
     @RequestMapping("index")
