@@ -82,14 +82,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void addOauthUser(UmsMember umsMember) {
+    public UmsMember addOauthUser(UmsMember umsMember) {
         userMapper.insertSelective(umsMember);
+        return umsMember;
     }
 
     @Override
     public UmsMember checkOauthUser(UmsMember umsCheck) {
         UmsMember umsMember = userMapper.selectOne(umsCheck);
         return umsMember;
+    }
+
+    @Override
+    public UmsMemberReceiveAddress getReceiveAddressById(String receiveAddressId) {
+        UmsMemberReceiveAddress umsMemberReceiveAddress = new UmsMemberReceiveAddress();
+        umsMemberReceiveAddress.setId(receiveAddressId);
+        UmsMemberReceiveAddress umsMemberReceiveAddress1 = umsMemberReceiveAddressMapper.selectOne(umsMemberReceiveAddress);
+        return umsMemberReceiveAddress1;
     }
 
     private UmsMember loginFromDb(UmsMember umsMember) {
